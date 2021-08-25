@@ -8,10 +8,12 @@
 ## 安装
 > composer require jolalau/think6-captcha
 
-## 安装
-> composer require jolalau/think6-captcha
-
 ## 前后端分离中使用
+
+###### 配置缓存
+
+打开/config/cache.php
+新增一个名为captcha的缓存连接
 
 ###### 生成图片验证码
 ```
@@ -36,10 +38,12 @@ code: 验证码值
 
 ###### 验证图片验证码
 ```
-CaptchaApi::check($code,$key);
 
-表单提交：code、key
+if ( ! CaptchaApi::check($code,$key)) {
+	//验证码错误
+}
 
+前端表单提交：code、key
 ```
 
 ###### 生成自定义验证码
@@ -61,12 +65,16 @@ code: 验证码值，用于自定义验证，比如：邮件、短信等
 
 ###### 验证自定义验证码
 ```
-CaptchaApi::checkCode($code,$key);
 
-表单提交：code、key
+if ( ! CaptchaApi::checkCode($code,$key)) {
+	//验证码错误
+}
+
+前端表单提交：code、key
+
 ```
 
 ## 来源
 ~~~
-基于think-captcha进行扩展，保留了think-captcha所有功能，用于非前后端分离项目
+基于think-captcha进行扩展，可继续使用原版 captcha.php 验证码配置文件
 ~~~

@@ -9,7 +9,7 @@ use think\Cache;
 
 class CaptchaApi
 {
-    private $im    = null; // 验证码图片实例
+    private $im = null; // 验证码图片实例
     private $color = null; // 验证码字体颜色
 
     /**
@@ -18,9 +18,9 @@ class CaptchaApi
     private $config = null;
 
     /**
-     * @var Session|null
+     * @var cache|null
      */
-    private $session = null;
+    private $cache = null;
 
     // 验证码字符集合
     protected $codeSet = '2345678abcdefhijkmnpqrstuvwxyzABCDEFGHJKLMNPQRTUVWXY';
@@ -54,13 +54,13 @@ class CaptchaApi
     /**
      * 架构方法 设置参数
      * @access public
-     * @param Config  $config
-     * @param Cache $cache
+     * @param Config $config
+     * @param Cache  $cache
      */
     public function __construct(Config $config, Cache $cache)
     {
-        $this->config  = $config;
-		$this->cache = $cache;
+        $this->config = $config;
+        $this->cache = $cache;
     }
 
     /**
@@ -92,11 +92,11 @@ class CaptchaApi
         $bag = '';
 
         if ($this->math) {
-            $this->useZh  = false;
+            $this->useZh = false;
             $this->length = 5;
 
-            $x   = random_int(10, 30);
-            $y   = random_int(1, 9);
+            $x = random_int(10, 30);
+            $y = random_int(1, 9);
             $bag = "{$x} + {$y} = ";
             $key = $x + $y;
             $key .= '';
@@ -114,72 +114,72 @@ class CaptchaApi
             $key = mb_strtolower($bag, 'UTF-8');
         }
 
-		$hash = password_hash($key, PASSWORD_BCRYPT, ['cost' => 10]);
-		$this->cache->set('captchaApi.'.$hash, 1, $this->expire);
+        $hash = password_hash($key, PASSWORD_BCRYPT, ['cost' => 10]);
+        $this->cache->store('captcha')->set('captchaApi.' . $hash, 1, $this->expire);
 
         return [
             'value' => $bag,
-            'key'   => $hash,
-			'code'   => $key,
-			'md5'   => md5($key),
+            'key' => $hash,
+            'code' => $key,
+            'md5' => md5($key),
         ];
     }
-	
-	/**
-	 * 输出验证码并把验证码的值保存的缓存中
-	 * @access public
-	 * @param null|string $config
-	 * @param bool        $api
-	 * @return object
-	 */
-	public function createSMS(string $phone = null): array
-	{
-		$key = rand(1000,9999);
-		$this->cache->set('captchaSMS.'.$phone, $key, $this->expire);
-		return [
-		    'key'   => $phone,
-			'code'   => $key,
-		];
-	}
-	
-	/**
-	 * 输出验证码并把验证码的值保存的缓存中
-	 * @access public
-	 * @param null|string $config
-	 * @param bool        $api
-	 * @return object
-	 */
-	public function checkSMS(string $code, string $phone): bool
-	{
-		$res = false;
-		if($this->cache->get('captchaSMS.'.$phone)==$code){
-			$res = true;
-		}
-		
-		if ($res) {
-		    $this->cache->delete('captchaSMS.'.$phone);
-		}
-		
-		return $res;
-	}
+
+    /**
+     * 输出验证码并把验证码的值保存的缓存中
+     * @access public
+     * @param null|string $config
+     * @param bool        $api
+     * @return object
+     */
+    public function createCode(string $phone = null): array
+    {
+        $key = rand(1000, 9999);
+        $this->cache->store('captcha')->set('captchaCode.' . $phone, $key, $this->expire);
+        return [
+            'key' => $phone,
+            'code' => $key,
+        ];
+    }
+
+    /**
+     * 输出验证码并把验证码的值保存的缓存中
+     * @access public
+     * @param null|string $config
+     * @param bool        $api
+     * @return object
+     */
+    public function checkCode(string $code, string $phone): bool
+    {
+        $res = false;
+        if ($this->cache->store('captcha')->get('captchaCode.' . $phone) == $code) {
+            $res = true;
+        }
+
+        if ($res) {
+            $this->cache->delete('captchaCode.' . $phone);
+        }
+
+        return $res;
+    }
 
     /**
      * 验证验证码是否正确
      * @access public
      * @param string $code 用户验证码
-	 * @param string $key 用户验证码key
+     * @param string $key  用户验证码key
      * @return bool 用户验证码是否正确
      */
     public function check(string $code, string $hash): bool
     {
-		$res = false;
-		if($this->cache->get('captchaApi.'.$hash)){
-			$code = mb_strtolower($code, 'UTF-8');
-			$res = password_verify($code, $hash);
-		}
+        $res = false;
+        if ($this->cache->store('captcha')->get('captchaApi.' . $hash)) {
+            $code = mb_strtolower($code, 'UTF-8');
+            $res = password_verify($code, $hash);
+        }
 
         if ($res) {
-            $this->cache->delete('captchaApi.'.$hash);
+            $this->cache->delete('captchaApi.' . $hash);
         }
 
         return $res;
@@ -214,7 +214,7 @@ class CaptchaApi
         $ttfPath = __DIR__ . '/../assets/' . ($this->useZh ? 'zhttfs' : 'ttfs') . '/';
 
         if (empty($this->fontttf)) {
-            $dir  = dir($ttfPath);
+            $dir = dir($ttfPath);
             $ttfs = [];
             while (false !== ($file = $dir->read())) {
                 if ('.' != $file[0] && substr($file, -4) == '.ttf') {
@@ -245,8 +245,8 @@ class CaptchaApi
 
         foreach ($text as $index => $char) {
 
-            $x     = $this->fontSize * ($index + 1) * mt_rand(1.2, 1.6) * ($this->math ? 1 : 1.5);
-            $y     = $this->fontSize + mt_rand(10, 20);
+            $x = $this->fontSize * ($index + 1) * mt_rand(1.2, 1.6) * ($this->math ? 1 : 1.5);
+            $y = $this->fontSize + mt_rand(10, 20);
             $angle = $this->math ? 0 : mt_rand(-40, 40);
 
             imagettftext($this->im, $this->fontSize, $angle, $x, $y, $this->color, $fontttf, $char);
@@ -257,12 +257,12 @@ class CaptchaApi
         imagepng($this->im);
         $content = ob_get_clean();
         imagedestroy($this->im);
-		return [
-			'base64' => 'data:image/png;base64,'.chunk_split(base64_encode($content)),
-			'key'    => $generator['key'],
-			'code'    => $generator['code'],
-			'md5'    => $generator['md5'],
-		];
+        return [
+            'base64' => 'data:image/png;base64,' . chunk_split(base64_encode($content)),
+            'key' => $generator['key'],
+            'code' => $generator['code'],
+            'md5' => $generator['md5'],
+        ];
     }
 
     /**
@@ -294,7 +294,7 @@ class CaptchaApi
         for ($px = $px1; $px <= $px2; $px = $px + 1) {
             if (0 != $w) {
                 $py = $A * sin($w * $px + $f) + $b + $this->imageH / 2; // y = Asin(ωx+φ) + b
-                $i  = (int) ($this->fontSize / 5);
+                $i = (int)($this->fontSize / 5);
                 while ($i > 0) {
                     imagesetpixel($this->im, $px + $i, $py + $i, $this->color); // 这里(while)循环画像素点比imagettftext和imagestring用字体大小一次画出（不用这while循环）性能要好很多
                     $i--;
@@ -303,18 +303,18 @@ class CaptchaApi
         }
 
         // 曲线后部分
-        $A   = mt_rand(1, $this->imageH / 2); // 振幅
-        $f   = mt_rand(-$this->imageH / 4, $this->imageH / 4); // X轴方向偏移量
-        $T   = mt_rand($this->imageH, $this->imageW * 2); // 周期
-        $w   = (2 * M_PI) / $T;
-        $b   = $py - $A * sin($w * $px + $f) - $this->imageH / 2;
+        $A = mt_rand(1, $this->imageH / 2); // 振幅
+        $f = mt_rand(-$this->imageH / 4, $this->imageH / 4); // X轴方向偏移量
+        $T = mt_rand($this->imageH, $this->imageW * 2); // 周期
+        $w = (2 * M_PI) / $T;
+        $b = $py - $A * sin($w * $px + $f) - $this->imageH / 2;
         $px1 = $px2;
         $px2 = $this->imageW;
 
         for ($px = $px1; $px <= $px2; $px = $px + 1) {
             if (0 != $w) {
                 $py = $A * sin($w * $px + $f) + $b + $this->imageH / 2; // y = Asin(ωx+φ) + b
-                $i  = (int) ($this->fontSize / 5);
+                $i = (int)($this->fontSize / 5);
                 while ($i > 0) {
                     imagesetpixel($this->im, $px + $i, $py + $i, $this->color);
                     $i--;
@@ -347,7 +347,7 @@ class CaptchaApi
     protected function background(): void
     {
         $path = __DIR__ . '/../assets/bgs/';
-        $dir  = dir($path);
+        $dir = dir($path);
 
         $bgs = [];
         while (false !== ($file = $dir->read())) {
