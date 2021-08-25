@@ -5,7 +5,7 @@ namespace jolalau\captcha\facade;
 use think\Facade;
 
 /**
- * Class Captcha
+ * CaptchaApi
  * @package jolalau\captcha\facade
  * @mixin \jolalau\captcha\Captcha
  */
