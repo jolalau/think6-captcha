@@ -7,7 +7,7 @@ use think\Facade;
 /**
  * CaptchaApi
  * @package jolalau\captcha\facade
- * @mixin \jolalau\captcha\Captcha
+ * @mixin \jolalau\captcha\CaptchaApi
  */
 class CaptchaApi extends Facade
 {
